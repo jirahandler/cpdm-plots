@@ -2,9 +2,12 @@
 #
 # generate_index.sh — regenerate index.html from your *_merged_plots folders
 
+# Turn on nullglob so that empty globs expand to nothing (no errors)
+shopt -s nullglob
+
 OUT=index.html
 
-# Write the HTML header
+# Start fresh
 cat > "$OUT" <<'EOF'
 <!DOCTYPE html>
 <html lang="en">
@@ -32,22 +35,17 @@ cat > "$OUT" <<'EOF'
   <h1>CPDM Overlay Gallery</h1>
 EOF
 
-# Loop categories
+# Loop over your three categories
 for CAT in xx xy yy; do
   DIR="${CAT}_merged_plots"
-  if [ ! -d "$DIR" ]; then
-    echo "  <!-- skipping missing directory $DIR -->" >> "$OUT"
-    continue
-  fi
+  if [ -d "$DIR" ]; then
+    echo "  <h2>Category: ${CAT^^}</h2>" >> "$OUT"
+    echo '  <div class="grid">' >> "$OUT"
 
-  echo "  <h2>Category: ${CAT^^}</h2>" >> "$OUT"
-  echo '  <div class="grid">' >> "$OUT"
-
-  # Find each overlay PNG
-  shopt -s nullglob
-  for IMG in "$DIR"/overlay_*.png; do
-    BASENAME=$(basename "$IMG" .png)
-    cat >> "$OUT" <<HTML
+    # Find all overlay_*.png in that directory
+    for IMG in "$DIR"/overlay_*.png; do
+      BASENAME=$(basename "$IMG" .png)
+      cat >> "$OUT" <<HTML
     <div class="item">
       <a href="$IMG" target="_blank">
         <img class="thumb" src="$IMG" alt="$BASENAME">
@@ -55,13 +53,15 @@ for CAT in xx xy yy; do
       <div class="caption">$BASENAME</div>
     </div>
 HTML
-  done
-  shopt -u nullglob
+    done
 
-  echo "  </div>" >> "$OUT"
+    echo "  </div>" >> "$OUT"
+  else
+    echo "  <!-- skipping missing directory $DIR -->" >> "$OUT"
+  fi
 done
 
-# Close HTML
+# Close the HTML
 cat >> "$OUT" <<'EOF'
 </body>
 </html>
